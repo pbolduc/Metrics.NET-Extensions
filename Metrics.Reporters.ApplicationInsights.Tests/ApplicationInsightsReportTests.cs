@@ -12,13 +12,27 @@ namespace Metrics.Reporters.ApplicationInsights.Tests
         {
             TelemetryConfiguration.Active.InstrumentationKey = "9ad01e62-9986-4830-8617-aee6b4dbb590";
 
+            double lastValue = 0;
             Random random = new Random();
-            Metric.Gauge("gauge", () => random.NextDouble() * 100, Unit.None);
+            Metric.Gauge("gauge", () =>
+            {
+                double delta = 10 - random.NextDouble()*20;
+                double nextValue = lastValue + delta;
+                if (nextValue < 0) nextValue = 0;
+                lastValue = nextValue;
 
-            Metric.Config.WithReporting(r => r.WithApplicationInsights(TimeSpan.FromSeconds(1)));
+                return nextValue;
+            }, Unit.None);
+
+            Metric.Config.WithReporting(r => r
+                .WithApplicationInsights(TimeSpan.FromSeconds(30))
+                .WithFilter(new MetricsReportFilter(/**/)));
+
+            Metric.Config.WithReporting(r => r
+                .WithApplicationInsights(TimeSpan.FromSeconds(30), new MetricsReportFilter( /**/)));          
 
 
-            Thread.Sleep(TimeSpan.FromSeconds(60));
+            Thread.Sleep(TimeSpan.FromMinutes(10));
         }
 
         
